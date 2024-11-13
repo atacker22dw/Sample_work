@@ -1,0 +1,168 @@
+\documentclass[11pt]{article}
+\usepackage[margin=0.75in]{geometry}
+\geometry{a4paper}
+\usepackage[T1]{fontenc} % Support Icelandic Characters
+\usepackage[utf8]{inputenc} % Support Icelandic Characters
+\usepackage{graphicx} % Support for including images
+\usepackage{hyperref} % Support for hyperlinks
+\usepackage{fancyhdr}
+
+\usepackage{stix}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{mathrsfs}
+\usepackage{xcolor}
+\usepackage{color}
+
+\newtheorem{definition}{Definition}
+
+\usepackage{booktabs}
+
+\usepackage{mathtools}
+\newcommand\myeq{\stackrel{\mathclap{\normalfont\mbox{d}}}{=}}
+\newcommand\neweq{\stackrel{\mathclap{\normalfont\mbox{a.s.}}}{=}}
+
+\usepackage{graphicx}
+\newcommand\smallO{
+  \mathchoice
+    {{\scriptstyle\mathcal{O}}}% \displaystyle
+    {{\scriptstyle\mathcal{O}}}% \textstyle
+    {{\scriptscriptstyle\mathcal{O}}}% \scriptstyle
+    {\scalebox{.7}{$\scriptscriptstyle\mathcal{O}$}}%\scriptscriptstyle
+  }
+
+\def\Date{Nov. 15, 2024}
+
+% %------------------------------------------------------------------
+% % TITLE
+% %------------------------------------------------------------------
+% \title{
+% \vspace{0.5 cm}
+% TITLE HERE \\
+% Colloquium \\
+% \Large SPEAKER / AFFILIATION HERE
+% }
+%
+%
+%
+% \author{
+%     Your name 1, Your name 2, Your name 3, Your name 4 \\
+% Department of Statistics and Operations Research \\
+% UNC Chapel Hill
+%     }
+%
+% \date{Colloquium Date}
+%
+%
+% %------------------------------------------------------------------
+% % DOCUMENT START HERE
+% %------------------------------------------------------------------
+% \begin{document}
+% \maketitle
+
+
+\begin{document}
+
+\begin{titlepage}
+\lhead*{{\vspace*{-20mm}\hspace*{-15mm}\includegraphics[scale=.15]{unc.jpg}}}
+
+\vspace*{10mm}
+
+\begin{center}
+	{\bf \Large 
+	 Moral Machine Learning
+	\\ 
+	Sample Lecture, Vassar College \\
+	Andrew (Andy) Ackerman\\
+	\Date
+	}
+\end{center}
+
+\end{titlepage}
+
+%% Refernces
+%\includepdf[pages={1-2},offset=5mm 0mm]{r.pdf}
+%\blankpage
+
+
+%%%%% Pagestyles
+\pagestyle{fancy}
+\fancypagestyle{plain}{\fancyfoot[C]{- \thepage\ -}}
+\fancyfoot[C]{- \thepage\ -}
+\fancyhead[L]{\it\small Sample Lecture: Vassar College}
+\fancyhead[C]{\it\small Measures of Fairness}
+\fancyhead[R]{\it\small \Date}
+\setcounter{page}{1}
+
+\tableofcontents
+\pagebreak
+
+
+
+\section{Setting}\label{rev}
+
+Consider a binary classifier $\mathcal{A}$ with target variable $Y \in \{0,1\}$.  Our aim is to classify $\hat{Y}_{\mathcal{A}}$ based on some feature space $\mathcal{X}$.  Moreover, let $S$ be a \textit{protected variable}.  By this we mean a demographic variable related to both the feature space and the target variable which (as a demographic variable) has a marginalized community as an observation of said variable.  
+
+For example, in the widely discussed COMPAS\cite{comp} dataset and associated algorithm, we aim to predict the risk of repeat offense from convicted felons.  This was initially intended to be used to supplement a judge's discretion in granting parole, but the algorithm (notably closed source) has been criticized as being biased against defendants of color (d.o.c).  In this case, our protected variable is racial background.  In which case, 
+
+\begin{center}
+$Y \in \{0,1\} = \{$no repeat offense, repeat offense$\}$, \\
+$\hat{Y}_{\mathcal{A}} \in \{0,1\} = \{$low risk, high risk$\}$\\
+$S = \mathbb{1}_{\{d.o.c\}}$
+
+\end{center}
+
+\section{Statistical Parity and Predictive Parity} 
+
+We are now ready to define quantitative metrics to assess the fairness of an algorithm.  We will begin with \textit{statistical parity} which is an \textit{independence criterion}.  
+
+\begin{definition}
+\textit{(Statistical Parity)}: $\mathcal{A}$ is said to violate $\varepsilon$-statistical parity if for $\varepsilon>0$ 
+
+\begin{equation}\label{eq1}
+|\mathbb{P}(\hat{Y}_{\mathcal{A}} = 1|S = 0)-\mathbb{P}(\hat{Y}_{\mathcal{A}} = 1| S = 1)|>\varepsilon.
+\end{equation} 
+
+\end{definition} 
+
+\textit{Remark}: $\varepsilon$ is left to user choice.  It should be clear that a smaller choice of $\varepsilon$ will result in a more stringent condition for \ref{eq1}.  That said, a common legal precedent is the \textit{four-fifths rule} \footnote{\href{https://www.govinfo.gov/content/pkg/CFR-2017-title29-vol4/xml/CFR-2017-title29-vol4-part1607.xml}{EEOC Guidelines}} which sets $\varepsilon = 0.2$.  
+
+A question worth considering is whether statistical parity completely encompasses what we mean by fair.  On the one hand it ensure the prediction is made independently of the protected variable ($\hat{Y}_{\mathcal{A}} \perp S$) which is fair at least in the sense of equal treatment across $S$.  However, there is also at least one sense in which statistical parity falls remarkably short.  Notice that it does not take the ground truth $Y$ into account.  As a result, even an oracle classifier (one that gets the class label correct every time) could violate statistical parity if the ground truth also exhibits disparate rates of $Y$ across $S$.  In this case, the algorithm is deemed unfair when it is really just recovering a property of the ground truth.  This is a poor property to exhibit.  
+
+To overcome this, \textit{predictive parity} does not just require independence but conditional independence.  Specifically, it conditions on the ground truth.  As such, it is what is known as a \textit{separation criterion}.  
+
+\begin{definition}
+
+\textit{(Predictive Parity)}: $\mathcal{A}$ is said to violate $\varepsilon$-predictive parity if for  $\varepsilon>0$
+\begin{equation}\label{eq3}
+|\mathbb{P}(\hat{Y}_{\mathcal{A}} = 1|(S = 0 \cap Y = 0))-\mathbb{P}(\hat{Y}_{\mathcal{A}} = 1|(S = 1 \cap Y = 0))|>\varepsilon
+\end{equation} 
+\end{definition}
+
+ Note, predictive parity requires $\hat{Y}_{\mathcal{A}} \perp S|Y$, and as such, an oracle classifier will not fail this condition even if the ground truth exhibits differing rates of $Y$ across $S$. In essence, predictive parity is insisting upon commensurate rates of false positives.  Consequently, the metric of fairness here is less about equal treatment across $S$ and more about ensuring that the burden of misclassifications (specifically false positives) is not disproportionately borne across $S$.  
+ 
+ It is worth mentioning that these are far from the only metrics for assessing fairness available in the literature.  What is true of each measure of fairness though is that it will have different properties that reflect a different ideal as to what it means to be fair.  
+ 
+ \section{Incompleteness Theorem}
+ 
+ So is assessing fairness as subjecting an algorithm to a chosen metric of fairness and seeing if it violates the condition?  Unfortunately not.  These measures (and others not mentioned here) are in some fundamental way, incompatible, and this will leave user with some ambivalence that is worth further discussion.  A series of incompleteness results\cite{IT} demonstrate precisely what we mean by incompatible.  
+ 
+\begin{definition}
+
+\textit{(Incompleteness Theorem)}: No single classifier, $\mathcal{A}$, will (outside of unlikely fringe cases) be able to simultaneously satisfy independence, separation and sufficiency\footnote{Examples of the first two are given above in statistical parity and predictive parity respectively.  We will not have time to discuss sufficiency at length, but it requires $Y\perp S|\hat{Y}_{\mathcal{A}}$.} type criteria.  These fringe cases include a perfect classifier used on a ground truth with no disparity across $S$.  
+\end{definition}
+
+The implication of this result are somewhat subtle but profound.  Namely, we cannot escape normative considerations such as ``what do we value?"  Often, the motivation behind developing statistical measures of fairness is to abstract away from such normative questions.  By appealing to quantitative measures, we hope to be able to make more objective the assessment of fairness and leave it less up for debate, so to speak.  However, this incompleteness theorem shows that we cannot satisfy all measures simultaneously, so we will ultimately have to make a choice as to which measure to prioritize in a given situation.  The answer to this question has less to do with quantitative performance and more to do with what we value.  What property of fairness do we value in the given context: equal treatment, proportionate burden of misclassifications, something else entirely?  These are the questions that we historically try to avoid, but \textit{Moral Machine Learning} aims to directly address.  This result shows that, indeed, these questions are unavoidable.  
+
+ 
+ 
+ \newpage
+ \begin{thebibliography}{20}
+
+\bibitem{IT} Kleinberg, J., Mullainathan, S., Raghavan, M. (2022).  Inherent trade-offs in the fair determination of risk scores.  
+ \bibitem{comp} Larson, J., Angwin, J., Kirchner, L., Mattu, S. (2016, May 23). How we analyzed the compas recidivism algorithm. ProPublica. 
+ 
+  \end{thebibliography}
+
+\end{document}
+
